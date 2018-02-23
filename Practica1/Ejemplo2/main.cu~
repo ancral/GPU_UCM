@@ -21,8 +21,8 @@ __global__ void MulGpu(float *A, float *B, float *C, int hA, int wA, int wB)
 {
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y * blockIdx.y;
+	if(i < hA && j < wB) for(int k = 0; k < wA ; k++) C[i*wB+j] += A[i*wA+k]*B[k*wB+j];
 
-	if(i < hA && j < wB) for(int k = 0; k < wA ; k++) C[i + j * wB] += A[i + k*hA] + B[k + j*wA];
 }
 
 void init_matrix(float *M, int hM, int wM, float k)
@@ -126,12 +126,13 @@ int main(int argc, char** argv)
 	
 	dim3 nThreads_per_block(32,32);
 	dim3 nBlocks;
-	if (N%32==0)
+	if ((hA*wB)%32==0)
 		nBlocks = dim3((hA*wB)/32,(hA*wB)/32);
 	else
 		nBlocks = dim3((hA*wB)/32 +1,(hA*wB)/32 +1);
 	
-	<<<nBlocks,nThreads_per_block>>>MulGpu(A_G, B_G,  C_G, hA, wA, wB);
+	MulGpu<<<nBlocks,nThreads_per_block>>>(A_G, B_G,  C_G, hA, wA, wB);
+
 	Mul(A, B, hA, wA, wB, C);
 
 	cudaMemcpy(C,C_G,sizeof (float)*hA*wB,cudaMemcpyDeviceToHost);	

@@ -32,10 +32,11 @@ __global__ void addMatrixGPU(float *a, float *b, float *c, int N )
 {
 	int i = threadIdx.x + blockDim.x * blockIdx.x;
 	int j = threadIdx.y + blockDim.y *blockIdx.y;
-		if (i <  N || j < N) a[i + j*N] = b[i+ j*N] + c[i+ j*N];
+		if (i <  N && j < N) a[i + j*N] = b[i+ j*N] + c[i+ j*N];
 	
 }
 
+//No se realiza los computos correctos a partir N >= 8627
 int main(int argc, char *argv[])
 {
 	float *a, *b, *c, *a_host;
