@@ -23,23 +23,24 @@ void Mul(float* A, float* B, int hA, int wA, int wB,
 	size = wA * wB * sizeof(float);
 	cudaMalloc((void**)&Bd, size);
 	cudaMemcpy(Bd,B,size,cudaMemcpyHostToDevice);//
-
+	
 	// Allocate C on the device
 	float* Cd;
 	size = hA * wB * sizeof(float);
 	cudaMalloc((void**)&Cd, size);
 	//	cublasHandle_t handle;
 	//	cublasCreate(&handle);
-
+	//cublasHandle_t handle;
+	//cublasCreate(&handle);
 	// Compute the execution configuration
 	cublasSgemm(//handle,
 		    CUBLAS_OP_N,
 		    CUBLAS_OP_N,
-		    hA,//				/* [m] */ 
-		    wB,//				/* [n] */  
-		    wA,//				/* [k] */ 
-		    1,//				/* alfa */ 
-		    Ad, wA,//			/* A[m][k], num columnas (lda) */ 
+		    wA,//				/* [m] */
+		    hA,//				/* [n] */
+		    wB,//				/* [k] */
+		    1,//				/* alfa */
+		    Ad, wA,//			/* A[m][k], num columnas (lda) */
 		    Bd, wB,//	       	/* B[k][n], num columnas (ldb) */
 		    0,//				/* beta */
 		    Cd, wA//			/* C[m][n], num columnas (ldc) */

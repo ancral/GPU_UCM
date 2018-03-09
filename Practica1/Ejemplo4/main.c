@@ -1,4 +1,7 @@
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "matrix_mul.h"
 
 void init_matrix(float *M, int hM, int wM, float k)
 {
@@ -23,6 +26,19 @@ void print_matrix(float *M, int hM, int wM)
 		printf("\n");
 	}
 }
+
+void transMat(float *M, int hm, int wm) {
+  int i = 0,j;
+  float *ret = (float *)malloc(sizeof(float)*hm*wm);
+  for( i = 0; i < hm;i++){
+    for(j = 0; j < wm; j++){
+      ret[i*wm+j] = M[j*wm +i];
+    }
+  }
+  M = ret;
+  free(ret);
+}
+
 
 int diff(float *A, float *B, int hA, int wA, int wB, float *C)
 {
@@ -89,13 +105,16 @@ int main(int argc, char** argv)
 	for (i = 0; i < (hA*wB); i++) {
 		C[i] = 0.0;
 	}
-
-
+	
+	//transMat(A,hA,wA);
+	//transMat(B,hB,wB);
 	Mul(A, B, hA, wA, wB, C);
-	//printf("\n\nMATRIX A\n");print_matrix(A, hA, wA);
-	//printf("\n\nMATRIX B\n");print_matrix(B, hB, wB);
-	//printf("\n\nMATRIX C\n");print_matrix(C, hA, wB);
-
+	printf("\n\nMATRIX A\n");print_matrix(A, hA, wA);
+	printf("\n\nMATRIX B\n");print_matrix(B, hB, wB);
+	printf("\n\nMATRIX C\n");print_matrix(C, hA, wB);
+	//transMat(C,hA,wB);
+	//transMat(A,hA,wA);
+	//transMat(B,hB,wB);
 	if (!diff(A, B, hA, wA, wB, C))
 		printf("ERROR=GPU.vs.CPU matrix mult differs\n");
 	
@@ -104,7 +123,9 @@ int main(int argc, char** argv)
 	//printf("\n\nMATRIX A\n");print_matrix(A, hA, wA);
 	//printf("\n\nMATRIX B\n");print_matrix(B, hB, wB);
 	//printf("\n\nMATRIX C\n");print_matrix(C, hA, wB);
-
+	free(A);
+	free(B);
+	free(C);
 	return (1);
 }
 
