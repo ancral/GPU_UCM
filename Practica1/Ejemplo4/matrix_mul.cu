@@ -35,9 +35,9 @@ void Mul(float* A, float* B, int hA, int wA, int wB,
 	cublasSgemm(//handle,
 		    CUBLAS_OP_N,
 		    CUBLAS_OP_N,
-		    hA,//				/* [m] */ 
-		    wB,//				/* [n] */  
-		    wA,//				/* [k] */ 
+		    wA,//				/* [m] */ 
+		    hA,//				/* [n] */  
+		    wB,//				/* [k] */ 
 		    1,//				/* alfa */ 
 		    Ad, wA,//			/* A[m][k], num columnas (lda) */ 
 		    Bd, wB,//	       	/* B[k][n], num columnas (ldb) */
