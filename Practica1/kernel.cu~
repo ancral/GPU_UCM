@@ -124,8 +124,6 @@ __global__ void thresholding(float level,float *G, float *image_out, int width, 
 
   int i = by*DIMBLOCK + ty;
   int j = bx*DIMBLOCK + tx;
-	
-	image_out[i*width+j] = 0;	
 
 	 if(i > 3 && j > 3 && i < width - 3 && j < height - 3){
 	if(G[i*width+j]>hithres && pedge[i*width+j])
