@@ -127,15 +127,15 @@ __global__ void thresholding(float level,float *G, float *image_out, int width, 
 	
 	image_out[i*width+j] = 0;	
 
-	 if(i > 3 && j > 3 && i < width - 3 && j < height - 3){
-	if(G[i*width+j]>hithres && pedge[i*width+j])
-		image_out[i*width+j] = 255;
-	else if(pedge[i*width+j] && G[i*width+j]>=lowthres && G[i*width+j]<hithres)
-		// check neighbours 3x3
-		for (ii=-1;ii<=1; ii++)
-			for (jj=-1;jj<=1; jj++)
-				if (G[(i+ii)*width+j+jj]>hithres)
-					image_out[i*width+j] = 255;
+	if(i > 3 && j > 3 && i < width - 3 && j < height - 3){
+		if(G[i*width+j]>hithres && pedge[i*width+j])
+			image_out[i*width+j] = 255;
+		else if(pedge[i*width+j] && G[i*width+j]>=lowthres && G[i*width+j]<hithres)
+			// check neighbours 3x3
+			for (ii=-1;ii<=1; ii++)
+				for (jj=-1;jj<=1; jj++)
+					if (G[(i+ii)*width+j+jj]>hithres)
+						image_out[i*width+j] = 255;
 	}
 
 }
@@ -154,7 +154,7 @@ void cannyGPU(float *im, float *image_out,
 {
   float *imOrig, *imFin, *Gx, *Gy, *G, *phi, *NR, *pedge;  
   dim3 numThreads = dim3(DIMBLOCK,DIMBLOCK);
-  dim3 dimBlock = dim3(height/DIMBLOCK,width/DIMBLOCK);
+  dim3 dimBlock = dim3(ceil(height/DIMBLOCK),ceil(width/DIMBLOCK));
 
   
   cudaMalloc((void**)&imOrig, height*width*sizeof(float));
