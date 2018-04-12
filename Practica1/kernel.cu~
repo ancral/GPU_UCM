@@ -1,6 +1,9 @@
 #include <cuda.h>
 #include <math.h>
-
+#include <stdio.h>
+/* Time */
+#include <sys/time.h>
+#include <sys/resource.h>
 #include "kernel.h"
 #define DIMBLOCK 16
 #define PI 3.141593
@@ -144,7 +147,15 @@ __global__ void thresholding(float level,float *G, float *image_out, int width, 
 
 
 
+double get_time(){
+	static struct timeval 	tv0;
+	double time_, mytime;
 
+	gettimeofday(&tv0,(struct timezone*)0);
+	time_=(double)((tv0.tv_usec + (tv0.tv_sec)*1000000));
+	mytime = time_/1000000;
+	return(mytime);
+}
 
 
 
@@ -153,6 +164,7 @@ void cannyGPU(float *im, float *image_out,
 	int height, int width)
 {
   float *imOrig, *imFin, *Gx, *Gy, *G, *phi, *NR, *pedge;  
+  double t0, t1;
   dim3 numThreads = dim3(DIMBLOCK,DIMBLOCK);
   dim3 dimBlock = dim3(ceil(height/DIMBLOCK),ceil(width/DIMBLOCK));
 
@@ -168,11 +180,15 @@ void cannyGPU(float *im, float *image_out,
   
   cudaMemcpy(imOrig,im,height*width*sizeof(float),cudaMemcpyHostToDevice);
 
+   t0 = get_time();
+
   NRAux<<<dimBlock,numThreads>>>(imOrig, NR, height, width);
   GradientAux<<<dimBlock,numThreads>>>(NR, Gx, Gy, G, phi, height, width);
   PedgeAux<<<dimBlock,numThreads>>>(G, pedge, phi, height, width);
   thresholding<<<dimBlock,numThreads>>>(level,G,imFin,width,height, pedge);
   
+  t1 = get_time();
+  printf("GPU REAL Exection time %f ms.\n", t1-t0);
   cudaMemcpy(image_out,imFin,height*width*sizeof(float),cudaMemcpyDeviceToHost);
 }
 
