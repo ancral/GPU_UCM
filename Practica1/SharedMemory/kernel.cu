@@ -18,32 +18,30 @@ __global__ void NRAux(float *im, float *NR,  int height, int width) {
 
   int i = by*DIMBLOCK + ty;
   int j = bx*DIMBLOCK + tx;
+  float NRsub = 0;
 
-  NR[i*width+j] = 0;
-
-  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
+  //  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
     // Shared memory for the sub-matrix of NR
-    __shared__ float NRs[DIMBLOCK][DIMBLOCK];
-
+   __shared__ float ims[DIMBLOCK][DIMBLOCK];
+   ims[tx][ty] = im[j + i * width];
     // Load the matrices from global memory to shared memory;
     // each thread loads one element of each matrix
-    NRs[ty][tx] = NR[a + tx +ty*wA];
-
-    // Synchronize to make sure the matrices are loaded
-    __syncthreads();
-
-    if(i > 2 && j > 2 && i < width - 2 && j < height - 2){
-      NR[i*width+j] =
-  				 (2.0*im[(i-2)*width+(j-2)] +  4.0*im[(i-2)*width+(j-1)] +  5.0*im[(i-2)*width+(j)] +  4.0*im[(i-2)*width+(j+1)] + 2.0*im[(i-2)*width+(j+2)]
-  				+ 4.0*im[(i-1)*width+(j-2)] +  9.0*im[(i-1)*width+(j-1)] + 12.0*im[(i-1)*width+(j)] +  9.0*im[(i-1)*width+(j+1)] + 4.0*im[(i-1)*width+(j+2)]
-  				+ 5.0*im[(i  )*width+(j-2)] + 12.0*im[(i  )*width+(j-1)] + 15.0*im[(i  )*width+(j)] + 12.0*im[(i  )*width+(j+1)] + 5.0*im[(i  )*width+(j+2)]
-  				+ 4.0*im[(i+1)*width+(j-2)] +  9.0*im[(i+1)*width+(j-1)] + 12.0*im[(i+1)*width+(j)] +  9.0*im[(i+1)*width+(j+1)] + 4.0*im[(i+1)*width+(j+2)]
-  				+ 2.0*im[(i+2)*width+(j-2)] +  4.0*im[(i+2)*width+(j-1)] +  5.0*im[(i+2)*width+(j)] +  4.0*im[(i+2)*width+(j+1)] + 2.0*im[(i+2)*width+(j+2)])
+   __syncthreads();
+   if(i > 2 && j > 2 && i < width - 2 && j < height - 2){
+       
+      NRsub =
+  				 (2.0*ims[i-2][j-2] +  4.0*ims[i-2][j-1] +  5.0*ims[i-2][j] +  4.0*ims[i-2][j+1] + 2.0*ims[i-2][j+2]
+  				+ 4.0*ims[i-1][j-2] +  9.0*ims[i-1][j-1] + 12.0*ims[i-1][j] +  9.0*ims[i-1][j+1] + 4.0*ims[i-1][j+2]
+  				+ 5.0*ims[i][j-2] + 12.0*ims[i][j-1] + 15.0*ims[i][j] + 12.0*ims[i][j+1] + 5.0*ims[i][j+2]
+  				+ 4.0*ims[i+1][j-2] +  9.0*ims[i+1][j-1] + 12.0*ims[i+1][j] +  9.0*ims[i+1][j+1] + 4.0*ims[i+1][j+2]
+  				+ 2.0*ims[i+2][j-2] +  4.0*ims[i+2][j-1] +  5.0*ims[i+2][j] +  4.0*ims[i+2][j+1] + 2.0*ims[i+2][j+2])
   				/159.0;
-
-    }
+      
+      
     __syncthreads();
-  }
+  
+    NR[i*width+j] = NRsub;
+    }
 }
 
 
@@ -59,24 +57,39 @@ __global__ void GradientAux(float *NR, float *Gx, float *Gy, float *G, float *ph
   int i = by*DIMBLOCK + ty;
   int j = bx*DIMBLOCK + tx;
 
-  G[i*width+j] = 0;
-  phi[i*width+j] = 0;
+  // G[i*width+j] = 0;
+  //phi[i*width+j] = 0;
+
+   float Gxsub = 0;
+   float Gysub = 0;
+  //  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
+    // Shared memory for the sub-matrix of NR
+   __shared__ float NRs[DIMBLOCK][DIMBLOCK];
+   NRs[tx][ty] = NR[j + i * width];
+    // Load the matrices from global memory to shared memory;
+    // each thread loads one element of each matrix
+   __syncthreads();
 
   if(i > 2 && j > 2 && i < width - 2 && j < height - 2){
 
-    Gx[i*width+j] = 
-				 (1.0*NR[(i-2)*width+(j-2)] +  2.0*NR[(i-2)*width+(j-1)] +  (-2.0)*NR[(i-2)*width+(j+1)] + (-1.0)*NR[(i-2)*width+(j+2)]
-				+ 4.0*NR[(i-1)*width+(j-2)] +  8.0*NR[(i-1)*width+(j-1)] +  (-8.0)*NR[(i-1)*width+(j+1)] + (-4.0)*NR[(i-1)*width+(j+2)]
-				+ 6.0*NR[(i  )*width+(j-2)] + 12.0*NR[(i  )*width+(j-1)] + (-12.0)*NR[(i  )*width+(j+1)] + (-6.0)*NR[(i  )*width+(j+2)]
-				+ 4.0*NR[(i+1)*width+(j-2)] +  8.0*NR[(i+1)*width+(j-1)] +  (-8.0)*NR[(i+1)*width+(j+1)] + (-4.0)*NR[(i+1)*width+(j+2)]
-				+ 1.0*NR[(i+2)*width+(j-2)] +  2.0*NR[(i+2)*width+(j-1)] +  (-2.0)*NR[(i+2)*width+(j+1)] + (-1.0)*NR[(i+2)*width+(j+2)]);
+    Gxsub = 
+				 (1.0*NRs[(i-2)][(j-2)] +  2.0*NRs[(i-2)][(j-1)] +  (-2.0)*NRs[(i-2)][(j+1)] + (-1.0)*NRs[(i-2)][(j+2)]
+				+ 4.0*NRs[(i-1)][(j-2)] +  8.0*NRs[(i-1)][(j-1)] +  (-8.0)*NRs[(i-1)][(j+1)] + (-4.0)*NRs[(i-1)][(j+2)]
+				+ 6.0*NRs[(i  )][(j-2)] + 12.0*NRs[(i  )][(j-1)] + (-12.0)*NRs[(i  )][(j+1)] + (-6.0)*NRs[(i  )][(j+2)]
+				+ 4.0*NRs[(i+1)][(j-2)] +  8.0*NRs[(i+1)][(j-1)] +  (-8.0)*NRs[(i+1)][(j+1)] + (-4.0)*NRs[(i+1)][(j+2)]
+				+ 1.0*NRs[(i+2)][(j-2)] +  2.0*NRs[(i+2)][(j-1)] +  (-2.0)*NRs[(i+2)][(j+1)] + (-1.0)*NRs[(i+2)][(j+2)]);
 
 
-    Gy[i*width+j] = 
-				 ((-1.0)*NR[(i-2)*width+(j-2)] + (-4.0)*NR[(i-2)*width+(j-1)] +  (-6.0)*NR[(i-2)*width+(j)] + (-4.0)*NR[(i-2)*width+(j+1)] + (-1.0)*NR[(i-2)*width+(j+2)]
-				+ (-2.0)*NR[(i-1)*width+(j-2)] + (-8.0)*NR[(i-1)*width+(j-1)] + (-12.0)*NR[(i-1)*width+(j)] + (-8.0)*NR[(i-1)*width+(j+1)] + (-2.0)*NR[(i-1)*width+(j+2)]
-				+    2.0*NR[(i+1)*width+(j-2)] +    8.0*NR[(i+1)*width+(j-1)] +    12.0*NR[(i+1)*width+(j)] +    8.0*NR[(i+1)*width+(j+1)] +    2.0*NR[(i+1)*width+(j+2)]
-				+    1.0*NR[(i+2)*width+(j-2)] +    4.0*NR[(i+2)*width+(j-1)] +     6.0*NR[(i+2)*width+(j)] +    4.0*NR[(i+2)*width+(j+1)] +    1.0*NR[(i+2)*width+(j+2)]);
+    Gysub = 
+				 ((-1.0)*NRs[(i-2)][(j-2)] + (-4.0)*NRs[(i-2)][(j-1)] +  (-6.0)*NRs[(i-2)][(j)] + (-4.0)*NRs[(i-2)][(j+1)] + (-1.0)*NRs[(i-2)][(j+2)]
+				+ (-2.0)*NRs[(i-1)][(j-2)] + (-8.0)*NRs[(i-1)][(j-1)] + (-12.0)*NRs[(i-1)][(j)] + (-8.0)*NRs[(i-1)][(j+1)] + (-2.0)*NRs[(i-1)][(j+2)]
+				+    2.0*NRs[(i+1)][(j-2)] +    8.0*NRs[(i+1)][(j-1)] +    12.0*NRs[(i+1)][(j)] +    8.0*NRs[(i+1)][(j+1)] +    2.0*NRs[(i+1)][(j+2)]
+				+    1.0*NRs[(i+2)][(j-2)] +    4.0*NRs[(i+2)][(j-1)] +     6.0*NRs[(i+2)][(j)] +    4.0*NRs[(i+2)][(j+1)] +    1.0*NRs[(i+2)][(j+2)]);
+
+    __syncthreads();
+    Gx[i*width+j] = Gxsub;
+    Gy[i*width+j] = Gysub;
+    
 
     G[i*width+j]   = sqrtf((Gx[i*width+j]*Gx[i*width+j])+(Gy[i*width+j]*Gy[i*width+j]));	//G = √Gx²+Gy²
     phi[i*width+j] = atan2f(fabs(Gy[i*width+j]),fabs(Gx[i*width+j]));
@@ -106,26 +119,41 @@ __global__ void PedgeAux(float *G, float *pedge, float *phi, int height, int wid
   int i = by*DIMBLOCK + ty;
   int j = bx*DIMBLOCK + tx;
 
-  pedge[i*width+j] = 0;
+  //pedge[i*width+j] = 0;
+  
+   float pedgesub = 0;
+  
+  //  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
+    // Shared memory for the sub-matrix of NR
+   __shared__ float Gs[DIMBLOCK][DIMBLOCK];
+   Gs[tx][ty] = G[j + i * width];
+    // Load the matrices from global memory to shared memory;
+    // each thread loads one element of each matrix
+   __syncthreads();
 
   if(i > 3 && j > 3 && i < width - 3 && j < height - 3){
     			if(phi[i*width+j] == 0){
-				if(G[i*width+j]>G[i*width+j+1] && G[i*width+j]>G[i*width+j-1]) //edge is in N-S
-					pedge[i*width+j] = 1;
+				if(Gs[i][j]>Gs[i][j+1] && Gs[i][j]>Gs[i][j-1]) //edge is in n-s
+					pedgesub = 1;
 
 			} else if(phi[i*width+j] == 45) {
-				if(G[i*width+j]>G[(i+1)*width+j+1] && G[i*width+j]>G[(i-1)*width+j-1]) // edge is in NW-SE
-					pedge[i*width+j] = 1;
+				if(Gs[i][j]>Gs[(i+1)][j+1] && Gs[i][j]>Gs[(i-1)][j-1]) // edge is in nw-se
+					pedgesub = 1;
 
 			} else if(phi[i*width+j] == 90) {
-				if(G[i*width+j]>G[(i+1)*width+j] && G[i*width+j]>G[(i-1)*width+j]) //edge is in E-W
-					pedge[i*width+j] = 1;
+				if(Gs[i][j]>Gs[(i+1)][j] && Gs[i][j]>Gs[(i-1)][j]) //edge is in e-w
+					pedgesub = 1;
 
 			} else if(phi[i*width+j] == 135) {
-				if(G[i*width+j]>G[(i+1)*width+j-1] && G[i*width+j]>G[(i-1)*width+j+1]) // edge is in NE-SW
-					pedge[i*width+j] = 1;
+				if(Gs[i][j]>Gs[(i+1)][j-1] && Gs[i][j]>Gs[(i-1)][j+1]) // edge is in ne-sw
+					pedgesub = 1;
 			}
   }
+
+     __syncthreads();
+
+    pedge[i*width +j] =  pedgesub;
+
 } 
 
 __global__ void thresholding(float level,float *G, float *image_out, int width, int height, float *pedge){
@@ -138,21 +166,32 @@ __global__ void thresholding(float level,float *G, float *image_out, int width, 
   	int ty = threadIdx.y;
 
 
-  int i = by*DIMBLOCK + ty;
-  int j = bx*DIMBLOCK + tx;
-	
+	int i = by*DIMBLOCK + ty;
+	int j = bx*DIMBLOCK + tx;
+
+	float image_outsub = 0;
+  
+	//  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
+	// Shared memory for the sub-matrix of NR
+	__shared__ float Gs[DIMBLOCK][DIMBLOCK];
+	__shared__ float pedges[DIMBLOCK][DIMBLOCK]
+	Gs[tx][ty] = G[j + i * width];
+	pedges[tx][ty] = pedge[j+i*width];
+	__syncthreads();
 	image_out[i*width+j] = 0;	
 
 	if(i > 3 && j > 3 && i < width - 3 && j < height - 3){
-		if(G[i*width+j]>hithres && pedge[i*width+j])
-			image_out[i*width+j] = 255;
-		else if(pedge[i*width+j] && G[i*width+j]>=lowthres && G[i*width+j]<hithres)
+		if(Gs[i][j]>hithres && pedges[i][j])
+			image_outsub = 255;
+		else if(pedges[i][j] && Gs[i][j]>=lowthres && Gs[i][j]<hithres)
 			// check neighbours 3x3
 			for (ii=-1;ii<=1; ii++)
 				for (jj=-1;jj<=1; jj++)
-					if (G[(i+ii)*width+j+jj]>hithres)
-						image_out[i*width+j] = 255;
+					if (Gs[(i+ii)][j+jj]>hithres)
+						image_outsub = 255;
 	}
+	__syncthreads();
+	image_out[i*width+ j] = image_outsub;
 
 }
 
