@@ -34,6 +34,7 @@ int main(int argc, char **argv)
 	int n;	
 	cl_mem darray1D;
 	cl_mem darray1D_trans;
+	cl_mem local_memory;
 
 	float *array1D;
 	float *array1D_trans;
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
 	cl_program program;
 	cl_kernel kernel;
 	size_t global[2];
+	size_t local[2];
 	
 	// variables used to read kernel source file
 	FILE *fp;
@@ -181,7 +183,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	kernel = clCreateKernel(program, "matrixTranspose", &err);
+	kernel = clCreateKernel(program, "matrixTransposeLocal", &err);
 	if (err != CL_SUCCESS)
 	{	
 		printf("Unable to create kernel object. Error Code=%d\n",err);
@@ -205,7 +207,8 @@ int main(int argc, char **argv)
 	// set the kernel arguments
 	if ( clSetKernelArg(kernel, 0, sizeof(cl_mem), &darray1D) ||
          clSetKernelArg(kernel, 1, sizeof(cl_mem), &darray1D_trans) ||
-         clSetKernelArg(kernel, 2, sizeof(cl_uint), &n) != CL_SUCCESS)
+         clSetKernelArg(kernel, 2, sizeof(cl_uint), &n) ||
+         clSetKernelArg(kernel, 3, sizeof(cl_mem), &local_memory)  != CL_SUCCESS)
 	{
 		printf("Unable to set kernel arguments. Error Code=%d\n",err);
 		exit(1);
@@ -221,8 +224,11 @@ int main(int argc, char **argv)
 	// local worksize = NULL - let OpenCL runtime determine
 	// No event wait list
 	double t0d = getMicroSeconds();
+	
+	local[0] = 16;
+	local[1] = 16;
 	err = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, 
-                                   global, NULL, 0, NULL, NULL);
+                                   global, local, 0, NULL, NULL);
 	double t1d = getMicroSeconds();
 
 	if (err != CL_SUCCESS)
