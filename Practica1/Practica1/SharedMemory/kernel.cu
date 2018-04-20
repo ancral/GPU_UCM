@@ -27,7 +27,6 @@ __global__ void NRAux(float *im, float *NR,  int height, int width) {
   int j = bx*DIMBLOCK + tx;
   float NRsub = 0;
 
-
    __shared__ float ims[DIMBLOCK][DIMBLOCK];
    ims[ty][tx] = im[i * width + j];
     
@@ -35,7 +34,7 @@ __global__ void NRAux(float *im, float *NR,  int height, int width) {
 
    if(ty > 2 && tx > 2 && ty < DIMBLOCK - 2 && tx < DIMBLOCK - 2 
     ){
-     
+
       NRsub =
   				 (2.0*ims[ty-2][tx-2] +  4.0*ims[ty-2][tx-1] +  5.0*ims[ty-2][tx] +  4.0*ims[ty-2][tx+1] + 2.0*ims[ty-2][tx+2]
   				+ 4.0*ims[ty-1][tx-2] +  9.0*ims[ty-1][tx-1] + 12.0*ims[ty-1][tx] +  9.0*ims[ty-1][tx+1] + 4.0*ims[ty-1][tx+2]
@@ -49,7 +48,6 @@ __global__ void NRAux(float *im, float *NR,  int height, int width) {
     
    }
    NR[i*width+j] = NRsub;
-
 }
 
 
@@ -169,10 +167,8 @@ __global__ void thresholding(float level,float *G, float *image_out, int width, 
   
 	__shared__ float Gs[DIMBLOCK][DIMBLOCK];
 	__shared__ float pedges[DIMBLOCK][DIMBLOCK];
-
 	Gs[ty][tx] = G[j + i * width];
 	pedges[ty][tx] = pedge[j+i*width];
-
 	__syncthreads();
 	image_out[i*width+j] = 0;	
 

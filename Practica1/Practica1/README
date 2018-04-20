@@ -1,0 +1,12 @@
+Práctica 1 Realizada por:
+	Ángel Cruz Alonso	e
+	Ignacio Nicolás López
+
+Durante el desarrollo e implementación de la memoria compartida en la práctica nos hemos topadpo con dos problemas:
+
+	- Al realizar el procesado de la imagen no hemos podido procesar los píxeles que se encontraban en los márgenes de cada bloque, creando unas franjas vacías en la imagen final, que distorsionaban en gran medida la imagen resultado.
+
+	- Pese a realizar lecturas en memoria compartida, no hemos podido mejorar el tiempo de ejecución en la GPU.
+
+Aun así, hemos decidido entregarte la parte con memoria compartida por si pudieses valorar el esfuerzo que hemos realizado durante el mes.
+
