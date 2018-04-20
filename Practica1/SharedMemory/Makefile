@@ -12,7 +12,7 @@ OBJS    = $(SOURCES:.c=.o) $(CU_SOURCES:.cu=.o)
 CFLAGS     = -O3
 NVCFLAGS   = $(CFLAGS) -Wno-deprecated-gpu-targets
 
-LIBS = -L/usr/local/cuda/lib64 -lcudart -lm 
+LIBS = -L/opt/cuda/lib64 -lcudart -lm 
 
 SOURCEDIR = .
 

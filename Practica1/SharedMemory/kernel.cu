@@ -19,16 +19,19 @@ __global__ void NRAux(float *im, float *NR,  int height, int width) {
   int i = by*DIMBLOCK + ty;
   int j = bx*DIMBLOCK + tx;
   float NRsub = 0;
-
+	NR[i*width+j] = 0;
   //  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
     // Shared memory for the sub-matrix of NR
    __shared__ float ims[DIMBLOCK][DIMBLOCK];
-   ims[tx][ty] = im[j + i * width];
+
+   ims[ty][tx] = im[i + j* width];
     // Load the matrices from global memory to shared memory;
     // each thread loads one element of each matrix
    __syncthreads();
    if(i > 2 && j > 2 && i < width - 2 && j < height - 2){
-       
+	
+		   printf("i=%i , j=%i \n", i,j);
+	
       NRsub =
   				 (2.0*ims[i-2][j-2] +  4.0*ims[i-2][j-1] +  5.0*ims[i-2][j] +  4.0*ims[i-2][j+1] + 2.0*ims[i-2][j+2]
   				+ 4.0*ims[i-1][j-2] +  9.0*ims[i-1][j-1] + 12.0*ims[i-1][j] +  9.0*ims[i-1][j+1] + 4.0*ims[i-1][j+2]
@@ -37,10 +40,11 @@ __global__ void NRAux(float *im, float *NR,  int height, int width) {
   				+ 2.0*ims[i+2][j-2] +  4.0*ims[i+2][j-1] +  5.0*ims[i+2][j] +  4.0*ims[i+2][j+1] + 2.0*ims[i+2][j+2])
   				/159.0;
       
-      
+
     __syncthreads();
-  
+
     NR[i*width+j] = NRsub;
+
     }
 }
 
@@ -174,7 +178,7 @@ __global__ void thresholding(float level,float *G, float *image_out, int width, 
 	//  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
 	// Shared memory for the sub-matrix of NR
 	__shared__ float Gs[DIMBLOCK][DIMBLOCK];
-	__shared__ float pedges[DIMBLOCK][DIMBLOCK]
+	__shared__ float pedges[DIMBLOCK][DIMBLOCK];
 	Gs[tx][ty] = G[j + i * width];
 	pedges[tx][ty] = pedge[j+i*width];
 	__syncthreads();
@@ -235,12 +239,12 @@ void cannyGPU(float *im, float *image_out,
    t0 = get_time();
 
   NRAux<<<dimBlock,numThreads>>>(imOrig, NR, height, width);
-  GradientAux<<<dimBlock,numThreads>>>(NR, Gx, Gy, G, phi, height, width);
-  PedgeAux<<<dimBlock,numThreads>>>(G, pedge, phi, height, width);
-  thresholding<<<dimBlock,numThreads>>>(level,G,imFin,width,height, pedge);
+  //GradientAux<<<dimBlock,numThreads>>>(NR, Gx, Gy, G, phi, height, width);
+  //PedgeAux<<<dimBlock,numThreads>>>(G, pedge, phi, height, width);
+  //thresholding<<<dimBlock,numThreads>>>(level,G,imFin,width,height, pedge);
   
   t1 = get_time();
   printf("GPU REAL Exection time %f ms.\n", t1-t0);
-  cudaMemcpy(image_out,imFin,height*width*sizeof(float),cudaMemcpyDeviceToHost);
+  cudaMemcpy(image_out,NR,height*width*sizeof(float),cudaMemcpyDeviceToHost);
 }
 
