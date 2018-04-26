@@ -30,6 +30,13 @@ int max_iter = 256;
 #include <sys/resource.h>
 
 static struct timeval tv0;
+
+void  initKernel(){
+  
+
+
+}
+
 double getMicroSeconds()
 {
 	double t;
@@ -140,10 +147,8 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 
 double calc_mandel_opencl()
 {
-	/*
-	 * TODO
-	 */
-	return(1.0);
+		
+       return(1.0);
 }
  
 double calc_mandel()
@@ -275,11 +280,13 @@ void init_gfx(int *c, char **v)
  
 int main(int c, char **v)
 {
-	init_gfx(&c, v);
-	printf("keys:\n\tr: color rotation\n\tm: monochrome\n\ti: screen shot\n\t"
-            "s: serial code\n\tc: OpenCL CPU\n\tg: OpenCL GPU\n\t"
-		"<, >: decrease/increase max iteration\n\tq: quit\n\tmouse buttons to zoom\n");
- 
-	glutMainLoop();
-	return 0;
+  
+  initKernel();
+  init_gfx(&c, v);
+  printf("keys:\n\tr: color rotation\n\tm: monochrome\n\ti: screen shot\n\t"
+	 "s: serial code\n\tc: OpenCL CPU\n\tg: OpenCL GPU\n\t"
+	 "<, >: decrease/increase max iteration\n\tq: quit\n\tmouse buttons to zoom\n");
+  
+  glutMainLoop();
+  return 0;
 }
