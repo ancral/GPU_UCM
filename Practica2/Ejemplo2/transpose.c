@@ -9,6 +9,7 @@
 #define DEVICE CL_DEVICE_TYPE_DEFAULT
 #endif
 
+#define DIM 16
 
 /* From common.c */
 extern double getMicroSeconds();
@@ -205,10 +206,10 @@ int main(int argc, char **argv)
 
 
 	// set the kernel arguments
-	if ( clSetKernelArg(kernel, 0, sizeof(cl_mem), &darray1D) ||
-         clSetKernelArg(kernel, 1, sizeof(cl_mem), &darray1D_trans) ||
+	if ( clSetKernelArg(kernel, 1, sizeof(cl_mem), &darray1D) ||
+         clSetKernelArg(kernel, 0, sizeof(cl_mem), &darray1D_trans) ||
          clSetKernelArg(kernel, 2, sizeof(cl_uint), &n) ||
-         clSetKernelArg(kernel, 3, sizeof(cl_mem), &local_memory)  != CL_SUCCESS)
+	     clSetKernelArg(kernel, 3, DIM*DIM*sizeof(float), NULL)  != CL_SUCCESS)
 	{
 		printf("Unable to set kernel arguments. Error Code=%d\n",err);
 		exit(1);
@@ -225,8 +226,8 @@ int main(int argc, char **argv)
 	// No event wait list
 	double t0d = getMicroSeconds();
 	
-	local[0] = 16;
-	local[1] = 16;
+	local[0] = DIM;
+	local[1] = DIM;
 	err = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, 
                                    global, local, 0, NULL, NULL);
 	double t1d = getMicroSeconds();
