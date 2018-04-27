@@ -145,9 +145,9 @@ void remove_noiseOCL(float *im, float *image_out,
 
 
   // set the kernel arguments
-  if ( clSetKernelArg(kernel, 0, sizeof(float)*width * height, &original) ||
-       clSetKernelArg(kernel, 1, sizeof(float)*width * height, &resultado) ||
-       clSetKernelArg(kernel, 2, sizeof(cl_uint), &thredshold) ||
+  if ( clSetKernelArg(kernel, 0, sizeof(cl_mem), &original) ||
+       clSetKernelArg(kernel, 1, sizeof(cl_mem), &resultado) ||
+       clSetKernelArg(kernel, 2, sizeof(cl_float), &thredshold) ||
        clSetKernelArg(kernel, 3, sizeof(cl_uint), &window_size)||
        clSetKernelArg(kernel, 4, sizeof(cl_uint), &width)||
        clSetKernelArg(kernel, 5, sizeof(cl_uint), &height)  != CL_SUCCESS)
@@ -187,6 +187,4 @@ void remove_noiseOCL(float *im, float *image_out,
   clReleaseContext(context);
   free(kernel_src);
 
-
- printf("Not Implemented yet!!\n");
 }
