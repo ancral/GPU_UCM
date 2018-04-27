@@ -1,0 +1,14 @@
+#ifndef _OCL_H
+
+#define _OCL_H
+/* From common.c */
+extern double getMicroSeconds();
+extern char *err_code (cl_int err_in);
+extern int output_device_info(cl_device_id device_id);
+extern float *getmemory1D( int nx );
+extern int check(float *GPU, float *CPU, int n);
+void remove_noiseOCL(float *im, float *image_out, 
+	float thredshold, int window_size,
+	int height, int width);
+
+#endif
