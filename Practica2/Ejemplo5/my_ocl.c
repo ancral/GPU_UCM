@@ -12,6 +12,7 @@
 
 extern char *err_code (cl_int err_in);
 extern int output_device_info(cl_device_id device_id);
+extern float *getmemory1D( int nx );
 
 /*double get_time(){
 	static struct timeval 	tv0;
@@ -28,7 +29,7 @@ double calc_piOCL(int n)
 {
 	//variables del kernel
   cl_mem areas;
-  float arfinal[n];
+  float * arfinal;
   double pi;
   int j;
 
@@ -50,6 +51,7 @@ double calc_piOCL(int n)
   size_t global;
   //size_t local;
 
+  arfinal = getmemory1D(n);
 
   fp = fopen("kernel.cl","r");
   fseek(fp,0L, SEEK_END);
@@ -165,10 +167,10 @@ double calc_piOCL(int n)
   global = n;
 
   //local = DIMBLOCK;
-  
+  double t0 = getMicroSeconds();
   err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
 			       &global, NULL, 0, NULL, NULL);
-  double t1d = getMicroSeconds();
+
 
   if (err != CL_SUCCESS)
     {	
@@ -192,7 +194,9 @@ double calc_piOCL(int n)
 		pi += arfinal[j];
 	}
    }
-  pi = pi / n;;
+  pi = pi / n;
+  double t1 = getMicroSeconds();
+    printf("\nThe kernel ran in %lf seconds\n",(t1-t0)/1000000);
   clReleaseProgram(program);
   clReleaseKernel(kernel);
   clReleaseCommandQueue(command_queue);
