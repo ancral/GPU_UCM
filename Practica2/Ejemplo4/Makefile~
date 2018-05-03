@@ -23,7 +23,7 @@ endif
 
 CCFLAGS += -D DEVICE=$(DEVICE) -I/usr/local/cuda/include
 
-main: my_ocl.c common.c main.c
+main: my_ocl.c main.c
 	$(CC) $^ $(CCFLAGS) $(LIBS) -o $@
 
 

@@ -52,7 +52,10 @@ extern float *getmemory1D( int nx );
 //
  
 const char *KernelSource = "\n" \
-"__kernel void vadd(                                                 \n" \
+"__kernel void vadd(__global float* d_a, __global float* d_b, __global float* d_c, unsigned int count){ \n" \
+"int i = get_global_id(0); \n" \
+"if(i < count) d_c[i] = d_a[i] + d_b[i]; \n" \
+"} \n"
 "\n";
 
 //------------------------------------------------------------------------------

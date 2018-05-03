@@ -165,7 +165,7 @@ double calc_piOCL(int n)
   global = n;
 
   //local = DIMBLOCK;
-  
+  double time1 = get_time();
   err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
 			       &global, NULL, 0, NULL, NULL);
   double t1d = getMicroSeconds();
@@ -192,7 +192,9 @@ double calc_piOCL(int n)
 		pi += arfinal[j];
 	}
    }
-  pi = pi / n;;
+  pi = pi / n;
+  double time2 = get_time();
+  printf("%f \n", time2 - time1);
   clReleaseProgram(program);
   clReleaseKernel(kernel);
   clReleaseCommandQueue(command_queue);
