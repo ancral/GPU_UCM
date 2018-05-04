@@ -51,7 +51,7 @@ double calc_piOCL(int n)
   size_t global;
   //size_t local;
 
-  arfinal = getmemory1D(n);
+  arfinal = getmemory1D(n/DIMBLOCK);
 
   fp = fopen("kernel.cl","r");
   fseek(fp,0L, SEEK_END);
@@ -159,17 +159,18 @@ double calc_piOCL(int n)
 
   // set the kernel arguments
   if ( clSetKernelArg(kernel, 0, sizeof(cl_mem), &areas) ||
-       clSetKernelArg(kernel, 1, sizeof(cl_uint), &n)  != CL_SUCCESS)
+	//clSetKernelArg(kernel, 1, sizeof(float), NULL) ||
+       clSetKernelArg(kernel,1, sizeof(cl_uint), &n)  != CL_SUCCESS)
     {
       printf("Unable to set kernel arguments. Error Code=%d\n",err);
       exit(1);
     }
-  global = n;
+  global = n/DIMBLOCK + 1;
 
   //local = DIMBLOCK;
   double t0 = getMicroSeconds();
   err = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, 
-			       &global, NULL, 0, NULL, NULL);
+			       &global, NULL/*&local*/, 0, NULL, NULL);
 
 
   if (err != CL_SUCCESS)
@@ -182,14 +183,14 @@ double calc_piOCL(int n)
   clFinish(command_queue);
 
   // read the output back to host memory
-  err = clEnqueueReadBuffer(command_queue, areas, CL_TRUE, 0, sizeof(float)*n,arfinal, 0, NULL,NULL);
+  err = clEnqueueReadBuffer(command_queue, areas, CL_TRUE, 0, sizeof(float)*(n/DIMBLOCK + 1),arfinal, 0, NULL,NULL);
   if (err != CL_SUCCESS)
     {	
       printf("Error enqueuing read buffer command. Error Code=%d\n",err);
       exit(1);
     }
   else{
-	for (j = 1; j < n ; j++){
+	for (j = 0; j < n/DIMBLOCK + 1 ; j++){
 		//printf("%f",arfinal[j]); 
 		pi += arfinal[j];
 	}
