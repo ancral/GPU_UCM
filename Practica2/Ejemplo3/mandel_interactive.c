@@ -13,7 +13,7 @@ int run_mode;
 void set_texture();
  
 typedef struct {unsigned char r, g, b;} rgb_t;
-typedef struct {cl_comand_queue comands; cl_kernel kernel;} tKernel;
+typedef struct {cl_comand_queue command_que; cl_kernel kernel;} tKernel;
 tKernel k; 
 rgb_t **tex = 0;
 int gwin;
@@ -53,7 +53,6 @@ void  initKernel(){
   cl_uint num_platforms_returned;
   cl_context context;
   cl_program program;
-  size_t global;
   //size_t local;
 
   arfinal = getmemory1D(n/DIMBLOCK);
@@ -323,7 +322,18 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 
 double calc_mandel_opencl()
 {
-		
+
+	size_t global;
+
+	err = clEnqueueNDRangeKernel(k.command_queue, k.kernel, 2, NULL, 
+                                   global, NULL, 0, NULL, NULL);
+	double t1d = getMicroSeconds();
+
+	if (err != CL_SUCCESS)
+	{	
+		printf("Unable to enqueue kernel command. Error Code=%d\n",err);
+		exit(1);
+	}
        return(1.0);
 }
  
