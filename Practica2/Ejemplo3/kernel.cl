@@ -1,85 +1,64 @@
 
 #define max_iter 256
+typedef struct {unsigned char r, g, b;} rgb_t;
 
-__kernel void mandel(__global rgb_t ** texcl, const uint width, const double scale, const double cx, const double cy, const uint height){
-	/*int i = get_global_id(0), j = get_global_id(1);
-	int iter, min, max;
-	rgb_t *pixel;
-	double x, y, zx, zy, zx2, zy2;
-	min = max_iter; max = 0;
-	if( i < height ) {
-		pixel = texcl[i] + j;
-		y = (i - height/2) * scale + cy;
-		if( j  < width ){
-			x = (j - width/2) * scale + cx;
+void hsv_to_rgb(int hue, int min, int max, __global unsigned char *p)
+{
 
-			zx = zy = zx2 = zy2 = 0;
-			for (iter=0; iter < max_iter; iter++) {
-				zy=2*zx*zy + y;
-				zx=zx2-zy2 + x;
-				zx2=zx*zx;
-				zy2=zy*zy;
-				if (zx2+zy2>max_iter)
-					break;
-			}
-			if (iter < min) min = iter;
-			if (iter > max) max = iter;
-			*(unsigned short *)pixel = iter;
-			//pixel++;
-		}
+	int color_rotate = 0;
+	int saturation = 1;
+	int invert = 0;
+	if (min == max) max = min + 1;
+	if (invert) hue = max - (hue - min);
+	if (!saturation) {
+		p[0] = p[1] = p[2] = 255 * (max - hue) / (max - min);
+		return;
 	}
+	double h = fmod(color_rotate + 1e-4 + 4.0 * (hue - min) / (max - min), 6);
+#	define VAL 255
+	double c = VAL * saturation;
+	double X = c * (1 - fabs(fmod(h, 2) - 1));
  
-	//barrera
+	p[0] = p[1] = p[2] = 0;
+ 
+	switch((int)h) {
+	case 0: p[0] = c; p[1] = X; return;
+	case 1: p[0] = X; p[1] = c; return;
+	case 2: p[1]= c; p[2] = X; return;
+	case 3: p[1] = X; p[2] = c; return;
+	case 4: p[0] = X; p[2] = c; return;
+	default:p[0] = c; p[2] = X;
+	}
+}
 
-	if( i < height ){
-			pixel = tex[i] + j;
-		if( j  < width ){
-
-			hsv_to_rgb(*(unsigned short*)pixel, min, max, pixel);
-			//pixel++;
-		}
-	}*/
+__kernel void mandel(__global unsigned char  * texcl, const uint width, const double scale, const double cx, const double cy, const uint height){
+	
 	int i = get_group_id(0);
 	int j = get_group_id(1);
-	int iter = get_local_id(0);
-	rgb_t *pixel;
+	int iter = get_local_id(0),min,max;
+	__global unsigned char *pixel;
 	double x, y, zx, zy, zx2, zy2;
-	//double t0;
-
-	//t0 = getMicroSeconds();
+	
 	min = max_iter; max = 0;
-	//for (i = 0; i < height; i++) {
-		pixel = tex[i];
-		y = (i - height/2) * scale + cy;
+	pixel = &texcl[i];
+	y = (i - height/2) * scale + cy;
+	x = (j - width/2) * scale + cx;
+	zx = zy = zx2 = zy2 = 0;
+	pixel += j;
+	
+	zy=2*zx*zy + y;
+	zx=zx2-zy2 + x;
+	zx2=zx*zx;
+	zy2=zy*zy;
 
-
-		//for (j = 0; j  < width; j++, pixel++) {
-			x = (j - width/2) * scale + cx;
-			zx = zy = zx2 = zy2 = 0;
-			pixel += j;
-
-			//for (iter=0; iter < max_iter; iter++) {
-				zy=2*zx*zy + y;
-				zx=zx2-zy2 + x;
-				zx2=zx*zx;
-				zy2=zy*zy;
-			//	if (zx2+zy2>max_iter)
-			//		break;
-			//}
-
-			if (iter == max_iter /*|| break_condition*/){
-				if (iter < min) min = iter;
-				if (iter > max) max = iter;}
-			*(unsigned short *)pixel = iter;
-		//}
-	//}
- 	/*	Realizar particiones en este momento?
- 		min & mx tienen que ser de salida?
- 		Si min  y/o max tienen que ser de salida, entonces este bucle tiene que estar fuera del kernel, y por tanto 
- 		habrá que realizar particiones/memorialocal + barreras*/
-	for (i = 0; i < height; i++)
-		for (j = 0, pixel = tex[i]; j  < width; j++, pixel++)
-			hsv_to_rgb(*(unsigned short*)pixel, min, max, pixel);
+	if (iter == max_iter){
+		if (iter < min) min = iter;
+		if (iter > max) max = iter;}
+	*pixel = iter;
+	barrier(CLK_GLOBAL_MEM_FENCE);
+	pixel = &texcl[i];
+	pixel += j;
+			hsv_to_rgb(*pixel, min, max, pixel);
 
 }
 

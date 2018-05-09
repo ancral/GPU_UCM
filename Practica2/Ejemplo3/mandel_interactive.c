@@ -4,16 +4,23 @@
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include "CL/cl.h"
 
 #define RUN_SERIAL     0
 #define RUN_OPENCL_CPU 1
 #define RUN_OPENCL_GPU 2
+#ifndef DEVICE
+#define DEVICE CL_DEVICE_TYPE_DEFAULT
+#endif
+
+extern char *err_code (cl_int err_in);
+extern int output_device_info(cl_device_id device_id);
 int run_mode;
  
 void set_texture();
  
 typedef struct {unsigned char r, g, b;} rgb_t;
-typedef struct {cl_comand_queue command_que; cl_kernel kernel;} tKernel;
+typedef struct {cl_command_queue command_queue; cl_kernel kernel;cl_mem texcl;} tKernel;
 tKernel k; 
 rgb_t **tex = 0;
 int gwin;
@@ -35,11 +42,7 @@ static struct timeval tv0;
 
 void  initKernel(){
   	//variables del kernel
-  cl_mem areas;
-  float * arfinal;
-  double pi;
-  int j;
-
+   cl_mem texcl;
 
   cl_int err;
   FILE *fp;
@@ -54,8 +57,6 @@ void  initKernel(){
   cl_context context;
   cl_program program;
   //size_t local;
-
-  arfinal = getmemory1D(n/DIMBLOCK);
 
   fp = fopen("kernel.cl","r");
   fseek(fp,0L, SEEK_END);
@@ -134,7 +135,7 @@ void  initKernel(){
       printf("Build failed. Error Code=%d\n", err);
 	
       size_t len;
-      char buffer[2048];
+      char buffer[66666];
       // get the build log
       clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG,
 			    sizeof(buffer), buffer, &len);
@@ -143,83 +144,58 @@ void  initKernel(){
     }
 
 
-  k.kernel = clCreateKernel(program, "calcAreas", &err);
+  k.kernel = clCreateKernel(program, "mandel", &err);
   if (err != CL_SUCCESS)
     {	
       printf("Unable to create kernel object. Error Code=%d\n",err);
       exit(1);
     }
   //Creamos los buffers
-  texcl = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(rgb_t) * width * height, NULL, NULL);
+  texcl = clCreateBuffer(context, CL_MEM_READ_WRITE,  sizeof(unsigned char) * height * width *3, NULL, NULL);
+  
+  err = clEnqueueWriteBuffer(k.command_queue, texcl, CL_TRUE, 0, sizeof(unsigned char) * height * width * 3,tex,0,NULL,NULL);
 
-  err = clEnqueueWriteBuffer(k.command_queue, texcl, CL_TRUE, 0, sizeof(rgb_t) * width * height,tex,0,NULL,NULL);
+  k.texcl = texcl;
 
   if (err != CL_SUCCESS)
     {
-      printf("Error: Failed to write h_b to source array!\n%s\n", err_code(err));
+      printf("Error: Failed to write tex to source texcl!\n%s\n", err_code(err));
       exit(1);
     }
 
 
   // set the kernel arguments
-  if ( clSetKernelArg(k.kernel, 0, sizeof(cl_mem), &texcl) ||
+  if ( clSetKernelArg(k.kernel, 0, sizeof(cl_mem), &k.texcl) ||
 	clSetKernelArg(k.kernel, 1, sizeof(cl_uint), &width) ||
-       clSetKernelArg(k.kernel,2, sizeof(cl_uint), &height)  != CL_SUCCESS)
+       clSetKernelArg(k.kernel,5, sizeof(cl_uint), &height) ||
+	clSetKernelArg(k.kernel, 2, sizeof(cl_double), &scale) ||
+	clSetKernelArg(k.kernel, 3, sizeof(cl_double), &cx) ||
+	clSetKernelArg(k.kernel, 4, sizeof(cl_double), &cy) != CL_SUCCESS)
     {
       printf("Unable to set kernel arguments. Error Code=%d\n",err);
       exit(1);
     }
-  global = n/DIMBLOCK + 1;
-
-  //local = DIMBLOCK;
-  double t0 = getMicroSeconds();
-  err = clEnqueueNDRangeKernel(k.command_queue, k.kernel, 1, NULL, 
-			       &global, NULL/*&local*/, 0, NULL, NULL);
+ 
 
 
-  if (err != CL_SUCCESS)
-    {	
-      printf("Unable to enqueue kernel command. Error Code=%d\n",err);
-      exit(1);
-    }
-
-  // wait for the command to finish
-  clFinish(k.command_queue);
-
-  // read the output back to host memory
-  err = clEnqueueReadBuffer(k.command_queue, areas, CL_TRUE, 0, sizeof(float)*(n/DIMBLOCK + 1),arfinal, 0, NULL,NULL);
-  if (err != CL_SUCCESS)
-    {	
-      printf("Error enqueuing read buffer command. Error Code=%d\n",err);
-      exit(1);
-    }
-  else{
-	for (j = 0; j < n/DIMBLOCK + 1 ; j++){
-		//printf("%f",arfinal[j]); 
-		pi += arfinal[j];
-	}
-   }
-  pi = pi / n;
-  double t1 = getMicroSeconds();
-    printf("\nThe kernel ran in %lf seconds\n",(t1-t0)/1000000);
+//  double t1 = getMicroSeconds();
+ //   printf("\nThe kernel ran in %lf seconds\n",(t1-t0)/1000000);
+  
   clReleaseProgram(program);
-  clReleaseKernel(k.kernel);
-  clReleaseCommandQueue(k.command_queue);
-  clReleaseContext(context);
   free(kernel_src);
-  return (pi);
+  return;
 
 
 }
 
-double getMicroSeconds()
+/*double getMicroSeconds()
 {
 	double t;
 	gettimeofday(&tv0, (struct timezone*)0);
 	t = ((tv0.tv_usec) + (tv0.tv_sec)*1000000);
 
-	return (t);
-}
+	return (t);calc_mandel
+}*/
 
 void render()
 {
@@ -323,17 +299,33 @@ void hsv_to_rgb(int hue, int min, int max, rgb_t *p)
 double calc_mandel_opencl()
 {
 
-	size_t global;
+	size_t global[2];
+	size_t local[2];
+  cl_int err;
 
+	global [0] = height;
+	global [1] = width;
+	local [0] = 256;
+	local [1] = 1;
 	err = clEnqueueNDRangeKernel(k.command_queue, k.kernel, 2, NULL, 
-                                   global, NULL, 0, NULL, NULL);
-	double t1d = getMicroSeconds();
+                                   global, local, 0, NULL, NULL);
+	//double t1d = getMicroSeconds();
 
+	
 	if (err != CL_SUCCESS)
 	{	
 		printf("Unable to enqueue kernel command. Error Code=%d\n",err);
 		exit(1);
 	}
+	err = clEnqueueReadBuffer(k.command_queue, k.texcl, CL_TRUE, 0, sizeof(rgb_t) * width * height, tex, 0, NULL,NULL);
+  	if (err != CL_SUCCESS)
+    	{	
+ 		printf("Error enqueuing read buffer command. Error Code=%d\n",err);
+		exit(1);
+   	}
+
+	clReleaseKernel(k.kernel);
+	clReleaseCommandQueue(k.command_queue);
        return(1.0);
 }
  

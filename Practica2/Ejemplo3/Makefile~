@@ -21,9 +21,9 @@ ifeq ($(PLATFORM), Darwin)
 	LIBS = -framework OpenCL
 endif
 
-CCFLAGS += -D DEVICE=$(DEVICE) -I/usr/local/cuda/include
+CCFLAGS += -D DEVICE=$(DEVICE)
 
-mandel: mandel_interactive.c common.c
+mandel: mandel_interactive.c
 	$(CC) $^ $(CCFLAGS) $(LIBS) -o $@
 
 

@@ -139,7 +139,7 @@ void remove_noiseOCL(float *im, float *image_out,
 
   if (err != CL_SUCCESS)
     {
-      printf("Error: Failed to write h_b to source array!\n%s\n", err_code(err));
+      printf("Error: Failed to write original to source array!\n%s\n", err_code(err));
       exit(1);
     }
 
