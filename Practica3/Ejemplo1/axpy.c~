@@ -57,10 +57,12 @@ int main (int argc, const char *argv[])
 		y[i] = y_acc[i] = (float)(n-i);
 	}
 	// SAXPY
-	t0 = get_time();
-	#pragma acc kernels copy(y_acc[0:n]) copyin(x_acc[0:n]) 
+	//t0 = get_time();
+	#pragma acc data copy(y_acc[0:n]) copyin(x_acc[0:n]) 
 	{
-		#pragma acc loop 
+		
+		#pragma acc kernels loop 
+		t0 = get_time();
 		for(i=0; i<n; i++)
 			y_acc[i] = a*x_acc[i] + y_acc[i];
 	}

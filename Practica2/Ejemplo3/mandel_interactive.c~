@@ -151,10 +151,9 @@ void  initKernel(){
       exit(1);
     }
   //Creamos los buffers
-  texcl = clCreateBuffer(context, CL_MEM_READ_ONLY,  sizeof(unsigned char) * height * width *3, NULL, NULL);
+  texcl = clCreateBuffer(context, CL_MEM_READ_WRITE,  sizeof(unsigned char) * tex_h * tex_w *3, NULL, NULL);
   
-
-  err = clEnqueueWriteBuffer(k.command_queue, texcl, CL_TRUE, 0, sizeof(unsigned char) * height * width * 3,tex,0,NULL,NULL);
+  err = clEnqueueWriteBuffer(k.command_queue, texcl, CL_TRUE, 0, sizeof(unsigned char) * tex_h * tex_w * 3,tex[0],0,NULL,NULL);
 
   k.texcl = texcl;
 
@@ -166,9 +165,9 @@ void  initKernel(){
 
 
   // set the kernel arguments
-  if ( clSetKernelArg(k.kernel, 0, sizeof(cl_mem), &k.texcl) ||
-	clSetKernelArg(k.kernel, 1, sizeof(cl_uint), &width) ||
-       clSetKernelArg(k.kernel,5, sizeof(cl_uint), &height) ||
+  if ( clSetKernelArg(k.kernel, 0, sizeof(cl_mem), &texcl) ||
+	clSetKernelArg(k.kernel, 1, sizeof(cl_uint), &tex_w) ||
+       clSetKernelArg(k.kernel,5, sizeof(cl_uint), &tex_h) ||
 	clSetKernelArg(k.kernel, 2, sizeof(cl_double), &scale) ||
 	clSetKernelArg(k.kernel, 3, sizeof(cl_double), &cx) ||
 	clSetKernelArg(k.kernel, 4, sizeof(cl_double), &cy) != CL_SUCCESS)
@@ -304,8 +303,8 @@ double calc_mandel_opencl()
 	size_t local[2];
   cl_int err;
 
-	global [0] = height;
-	global [1] = width;
+	global [0] = tex_h;
+	global [1] = tex_w;
 	local [0] = 256;
 	local [1] = 1;
 	err = clEnqueueNDRangeKernel(k.command_queue, k.kernel, 2, NULL, 
@@ -318,7 +317,7 @@ double calc_mandel_opencl()
 		printf("Unable to enqueue kernel command. Error Code=%d\n",err);
 		exit(1);
 	}
-	err = clEnqueueReadBuffer(k.command_queue, k.texcl, CL_TRUE, 0, sizeof(rgb_t) * width * height, tex, 0, NULL,NULL);
+	err = clEnqueueReadBuffer(k.command_queue, k.texcl, CL_TRUE, 0, sizeof(unsigned char) * 3 * tex_h * tex_w, tex[0], 0, NULL,NULL);
   	if (err != CL_SUCCESS)
     	{	
  		printf("Error enqueuing read buffer command. Error Code=%d\n",err);
@@ -460,8 +459,9 @@ void init_gfx(int *c, char **v)
 int main(int c, char **v)
 {
   
-  initKernel();
+  
   init_gfx(&c, v);
+  initKernel();
   printf("keys:\n\tr: color rotation\n\tm: monochrome\n\ti: screen shot\n\t"
 	 "s: serial code\n\tc: OpenCL CPU\n\tg: OpenCL GPU\n\t"
 	 "<, >: decrease/increase max iteration\n\tq: quit\n\tmouse buttons to zoom\n");

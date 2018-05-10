@@ -32,7 +32,7 @@ void randomizeBodies(body *data, int n) {
 		data[i].vz = 2.0f * (rand() / (float)RAND_MAX) - 1.0f;
 	}
 }
-#pragma acc routine 
+#pragma acc routine parallel
 void bodyForce(body *p, float dt, int n) {
 	float Fx = 0.0f; float Fy = 0.0f; float Fz = 0.0f;
 	int i, j;

@@ -52,16 +52,17 @@ int main(int argc, char** argv)
 
 	int iter = 0;
 
-#pragma acc ...
+#pragma acc data copy(Anew[0:(n*m)]) copy(A[0:(n*m)]) 
 {
 	StartTimer();
 
 	while ( error > tol && iter < iter_max )
 	{
 		error = 0.0;
-
+		#pragma acc kernels loop independent collapse(2) reduction(max:error)
 		for( int j = 1; j < n-1; j++)
 		{
+			
 			for( int i = 1; i < m-1; i++ )
 			{
 				Anew[j*m+i] = 0.25 * ( A[j*m+i+1] + A[j*m+i-1]
@@ -70,8 +71,10 @@ int main(int argc, char** argv)
 			}
 		}
 
+		#pragma acc kernels loop independent collapse(2)
 		for( int j = 1; j < n-1; j++)
 		{
+
 			for( int i = 1; i < m-1; i++ )
 			{
 				A[j*m+i] = Anew[j*m+i];    

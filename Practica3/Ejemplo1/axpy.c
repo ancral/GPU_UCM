@@ -57,14 +57,16 @@ int main (int argc, const char *argv[])
 		y[i] = y_acc[i] = (float)(n-i);
 	}
 	// SAXPY
-	t0 = get_time();
+	//t0 = get_time();
 	#pragma acc data copy(y_acc[0:n]) copyin(x_acc[0:n]) 
 	{
+		t0 = get_time();
 		#pragma acc kernels loop 
 		for(i=0; i<n; i++)
 			y_acc[i] = a*x_acc[i] + y_acc[i];
+		t1 = get_time();
 	}
-	t1 = get_time();
+	
 	printf("AXPY ACC %f ms\n", (t1-t0)/1000);
 
 	t0 = get_time();

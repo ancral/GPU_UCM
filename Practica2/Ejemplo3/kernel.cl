@@ -32,7 +32,7 @@ void hsv_to_rgb(int hue, int min, int max, __global unsigned char *p)
 }
 
 __kernel void mandel(__global unsigned char  * texcl, const uint width, const double scale, const double cx, const double cy, const uint height){
-	
+#if 0	
 	int i = get_group_id(0);
 	int j = get_group_id(1);
 	int iter = get_local_id(0),min,max;
@@ -40,11 +40,11 @@ __kernel void mandel(__global unsigned char  * texcl, const uint width, const do
 	double x, y, zx, zy, zx2, zy2;
 	
 	min = max_iter; max = 0;
-	pixel = &texcl[i];
+	pixel = texcl[i*3];
 	y = (i - height/2) * scale + cy;
 	x = (j - width/2) * scale + cx;
 	zx = zy = zx2 = zy2 = 0;
-	pixel += j;
+	pixel += j*3;
 	
 	zy=2*zx*zy + y;
 	zx=zx2-zy2 + x;
@@ -56,9 +56,10 @@ __kernel void mandel(__global unsigned char  * texcl, const uint width, const do
 		if (iter > max) max = iter;}
 	*pixel = iter;
 	barrier(CLK_GLOBAL_MEM_FENCE);
-	pixel = &texcl[i];
-	pixel += j;
+	pixel = texcl[i*3];
+	pixel += j*3;
 			hsv_to_rgb(*pixel, min, max, pixel);
+#endif
 
 }
 

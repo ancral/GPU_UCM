@@ -5,7 +5,7 @@ CC=gcc
 
 CFLAGS=-O3
 
-PGCC=pgcc -Minfo -fast -acc -ta=nvidia -tp=nehalem
+PGCC=pgcc -Minfo -fast -acc -ta=nvidia:cc20 -tp=nehalem
 
 LIB=-lm
 

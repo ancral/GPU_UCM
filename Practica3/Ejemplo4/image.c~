@@ -162,6 +162,8 @@ void border(float *im, float *image_out,
 	{
 		for(j=ws2; j<width-ws2; j++)
 		{
+			
+			
 			for (ii =-ws2; ii<=ws2; ii++)
 			{
 				for (jj =-ws2; jj<=ws2; jj++)
