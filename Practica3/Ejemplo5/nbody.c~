@@ -32,11 +32,11 @@ void randomizeBodies(body *data, int n) {
 		data[i].vz = 2.0f * (rand() / (float)RAND_MAX) - 1.0f;
 	}
 }
-#pragma acc routine parallel
+//#pragma acc routine 
 void bodyForce(body *p, float dt, int n) {
 	float Fx = 0.0f; float Fy = 0.0f; float Fz = 0.0f;
 	int i, j;
-	#pragma kernels loop collapse(2) reduction(+:Fx,Fy,Fz) independent
+	#pragma acc kernels loop collapse(2) independent present(p[0:n])
 	for (i = 0; i < n; i++) { 
 		for (j = 0; j < n; j++) {
 			if (i!=j) {
@@ -49,9 +49,12 @@ void bodyForce(body *p, float dt, int n) {
 
 				float G = 6.674e-11;
 				float g_masses = G * p[j].m * p[i].m;
-
-				Fx += g_masses * dx * invDist3; 
-				Fy += g_masses * dy * invDist3; 
+				
+				#pragma acc reduction(+:Fx)
+				Fx += g_masses * dx * invDist3;
+				#pragma acc reduction(+:Fy)
+				Fy += g_masses * dy * invDist3;
+				#pragma acc reduction(+:Fz)
 				Fz += g_masses * dz * invDist3;
 			}
 		}
@@ -61,10 +64,10 @@ void bodyForce(body *p, float dt, int n) {
 		Fx = 0.0f;  Fy = 0.0f;  Fz = 0.0f;
 	}
 }
-#pragma acc routine 
+//#pragma acc routine 
 void integrate(body *p, float dt, int n){
 	int i;
-	#pragma kernels loop independent
+	#pragma acc kernels loop independent present(p[0:n])
 	for (i = 0 ; i < n; i++) {
 		p[i].x += p[i].vx*dt;
 		p[i].y += p[i].vy*dt;

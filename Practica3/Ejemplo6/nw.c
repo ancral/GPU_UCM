@@ -269,75 +269,79 @@ void runTest( int argc, char** argv)
 	for( int j = 1; j< max_cols ; j++)
 		nw_matrix[j] = j * penalty;
 
-
+	 int i;
 	/********************/
 	/* Needleman-Wunsch */
 	/********************/
-	t0 = gettime();
-	/* Compute top-left matrix */
-	for( int i = 0 ; i < max_rows-2 ; i++){
-		for( idx = 0 ; idx <= i ; idx++){
-			index = (idx + 1) * max_cols + (i + 1 - idx);
-
-			if (blosum)
-				S = blosum62[input1[i - idx]][input2[idx]];
-			else
-				if (input1[i - idx] == input2[idx])
-					S = 1;
-				else S=-1;
-
-			match  = nw_matrix[index-1-max_cols] + S;
-			delet  = nw_matrix[index-1] + penalty;
-			insert = nw_matrix[index-max_cols] + penalty;
-
-			nw_matrix[index] = MAXIMUM(match, delet, insert);
-		}
-	}
-
-	/* Compute diagonals matrix */
-	for( int i = max_rows-2; i < max_cols-2 ; i++){
-		for( idx = 0 ; idx <= max_rows-2; idx++){
-			index = (idx + 1) * max_cols + (i + 1 - idx);
-
-			if (blosum)
-				S = blosum62[input1[i - idx]][input2[idx]];
-			else
-				if (input1[i - idx] == input2[idx])
-					S = 1;
-				else S=-1;
-
-			match  = nw_matrix[index-1-max_cols] + S;
-			delet  = nw_matrix[index-1] + penalty;
-			insert = nw_matrix[index-max_cols] + penalty;
-
-			nw_matrix[index] = MAXIMUM(match, delet, insert);
-		}
-	}
-
-	/* Compute bottom-right matrix */
-	for( int i = max_rows-2; i >= 0 ; i--){
-		for( idx = 0 ; idx <= i; idx++){
-			index =  ( idx+max_rows-1-i ) * max_cols + max_cols-idx-1 ;
-
-			if (blosum)
-				S = blosum62[input1[max_cols-idx-2]][input2[idx+max_rows-2-i]];
-			else
-				if (input1[idx+max_rows-2-i] == input2[max_cols-idx-2])
-					S = 1;
-				else S=-1;
-
-			match  = nw_matrix[index-1-max_cols] + S;
-			delet  = nw_matrix[index-1] + penalty;
-			insert = nw_matrix[index-max_cols] + penalty;
-
-			nw_matrix[index] = MAXIMUM(match, delet, insert);
-		}
-	}
-
-	t1 = gettime();
-
-	printf("\nPerformance %f GCUPS\n", 1.0e-9*((max_rows-1)*(max_cols-1)/(t1-t0)));
+	#pragma acc data copyin(input1[0:max_cols]) copyin(input2[0:max_rows]) copyin(blosum62[0:24*24]) copy(nw_matrix[0:max_cols*max_rows])
+	{
+		t0 = gettime();
+		/* Compute top-left matrix */
 	
+		#pragma acc kernels loop 
+		for(i = 0 ; i < max_rows-2 ; i++){
+			for( idx = 0 ; idx <= i ; idx++){
+				index = (idx + 1) * max_cols + (i + 1 - idx);
+
+				if (blosum)
+					S = blosum62[input1[i - idx]][input2[idx]];
+				else
+					if (input1[i - idx] == input2[idx])
+						S = 1;
+					else S=-1;
+
+				match  = nw_matrix[index-1-max_cols] + S;
+				delet  = nw_matrix[index-1] + penalty;
+				insert = nw_matrix[index-max_cols] + penalty;
+
+				nw_matrix[index] = MAXIMUM(match, delet, insert);
+			}
+		}
+
+		/* Compute diagonals matrix */
+		#pragma acc kernels loop 
+		for( i = max_rows-2; i < max_cols-2 ; i++){
+			for( idx = 0 ; idx <= max_rows-2; idx++){
+				index = (idx + 1) * max_cols + (i + 1 - idx);
+
+				if (blosum)
+					S = blosum62[input1[i - idx]][input2[idx]];
+				else
+					if (input1[i - idx] == input2[idx])
+						S = 1;
+					else S=-1;
+
+				match  = nw_matrix[index-1-max_cols] + S;
+				delet  = nw_matrix[index-1] + penalty;
+				insert = nw_matrix[index-max_cols] + penalty;
+
+				nw_matrix[index] = MAXIMUM(match, delet, insert);
+			}
+		}
+
+		/* Compute bottom-right matrix */	
+		#pragma acc kernels loop 
+		for( i = max_rows-2; i >= 0 ; i--){
+			for( idx = 0 ; idx <= i; idx++){
+				index =  ( idx+max_rows-1-i ) * max_cols + max_cols-idx-1 ;
+
+				if (blosum)
+					S = blosum62[input1[max_cols-idx-2]][input2[idx+max_rows-2-i]];
+				else
+					if (input1[idx+max_rows-2-i] == input2[max_cols-idx-2])
+						S = 1;
+					else S=-1;
+
+				match  = nw_matrix[index-1-max_cols] + S;
+				delet  = nw_matrix[index-1] + penalty;
+				insert = nw_matrix[index-max_cols] + penalty;
+
+				nw_matrix[index] = MAXIMUM(match, delet, insert);
+			}
+		}
+
+		t1 = gettime();
+	}
 
 
 #define TRACEBACK
@@ -423,9 +427,11 @@ void runTest( int argc, char** argv)
 	for (int i = 0 ; i < max_rows-1; i++)
 		printf("%c", get_amino_symbol(input2[i])); printf("\n");
 
+	printf("\nPerformance %f GCUPS\n", 1.0e-9*((max_rows-1)*(max_cols-1)/(t1-t0)));
 	printf("\nNeedleman-Wunsch Alignment\n");
 	printf("%s\n", output1);
-	printf("%s\n", output2);
+	printf("%s\n", output2);		
+	
 
 	free(nw_matrix);
 	free(input1);
