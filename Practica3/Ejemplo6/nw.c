@@ -299,8 +299,9 @@ void runTest( int argc, char** argv)
 		}
 
 		/* Compute diagonals matrix */
-		#pragma acc kernels loop collapse(2) independent 
+		
 		for( i = max_rows-2; i < max_cols-2 ; i++){
+			#pragma acc kernels loop independent 
 			for( idx = 0 ; idx <= max_rows-2; idx++){
 				index = (idx + 1) * max_cols + (i + 1 - idx);
 
@@ -348,7 +349,7 @@ void runTest( int argc, char** argv)
 #define TRACEBACK
 #ifdef TRACEBACK
 	printf("        ");
-	for (int i = 0 ; i < max_cols-1; i++)
+	/*for (int i = 0 ; i < max_cols-1; i++)
 		printf("  %c  ", get_amino_symbol(input1[i]));
 	printf("\n");
 	for (int i = 0 ; i < max_rows; i++){
@@ -367,9 +368,9 @@ void runTest( int argc, char** argv)
 					printf("  %i ", nw_matrix[i*max_cols+j]);				
 
 		}
-		printf("\n");
+		printf("\n")
 	}
-	printf("\n");
+	printf("\n");*/
 #endif
 	int pos1 = 0;
 	int pos2 = 0;
@@ -421,12 +422,12 @@ void runTest( int argc, char** argv)
 		output2[i] = tmp2[pos1-i-1];
 	output2[pos2] = '\0';
 	
-	printf("input: ");
-	for (int i = 0 ; i < max_cols-1; i++)
-		printf("%c", get_amino_symbol(input1[i])); printf("\n");
-	printf("input: ");
-	for (int i = 0 ; i < max_rows-1; i++)
-		printf("%c", get_amino_symbol(input2[i])); printf("\n");
+	//printf("input: ");
+	//for (int i = 0 ; i < max_cols-1; i++)
+	//	printf("%c", get_amino_symbol(input1[i])); printf("\n");
+	//printf("input: ");
+	//for (int i = 0 ; i < max_rows-1; i++)
+	//	printf("%c", get_amino_symbol(input2[i])); printf("\n");
 
 	printf("\nPerformance %f GCUPS\n", 1.0e-9*((max_rows-1)*(max_cols-1)/(t1-t0)));
 	printf("\nNeedleman-Wunsch Alignment\n");
