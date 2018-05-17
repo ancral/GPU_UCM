@@ -278,17 +278,17 @@ void runTest( int argc, char** argv)
 		t0 = gettime();
 		/* Compute top-left matrix */
 	
-		#pragma acc kernels loop 
+		
 		for(i = 0 ; i < max_rows-2 ; i++){
+			#pragma acc kernels loop independent 
 			for( idx = 0 ; idx <= i ; idx++){
 				index = (idx + 1) * max_cols + (i + 1 - idx);
 
 				if (blosum)
 					S = blosum62[input1[i - idx]][input2[idx]];
-				else
-					if (input1[i - idx] == input2[idx])
-						S = 1;
-					else S=-1;
+				else if (input1[i - idx] == input2[idx])
+					S = 1;
+				else S=-1;
 
 				match  = nw_matrix[index-1-max_cols] + S;
 				delet  = nw_matrix[index-1] + penalty;
@@ -299,7 +299,7 @@ void runTest( int argc, char** argv)
 		}
 
 		/* Compute diagonals matrix */
-		#pragma acc kernels loop 
+		#pragma acc kernels loop collapse(2) independent 
 		for( i = max_rows-2; i < max_cols-2 ; i++){
 			for( idx = 0 ; idx <= max_rows-2; idx++){
 				index = (idx + 1) * max_cols + (i + 1 - idx);
@@ -320,8 +320,9 @@ void runTest( int argc, char** argv)
 		}
 
 		/* Compute bottom-right matrix */	
-		#pragma acc kernels loop 
+		
 		for( i = max_rows-2; i >= 0 ; i--){
+			#pragma acc kernels loop independent
 			for( idx = 0 ; idx <= i; idx++){
 				index =  ( idx+max_rows-1-i ) * max_cols + max_cols-idx-1 ;
 
